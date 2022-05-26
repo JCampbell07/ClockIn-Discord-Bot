@@ -308,4 +308,4 @@ async def staffcheck(ctx, member: discord.User):
 
 
 
-client.run('OTQzMTcxNjk1Njk3NjAwNTgy.G-tEDu.72ouim8sDg1KgfBnXjG8mTQ1Gjh-SLbPmfgiX4')
+client.run('{TOKEN}')
