@@ -24,15 +24,20 @@ client.remove_command('help')
 conn = sqlite3.connect('clock.sqlite')
 c = conn.cursor()
 
-regiment = [496080101037965314]
+# Discord ID goes in the discords variable
+discords = [496080101037965314]
+
+# Staff role IDs go here
 roleids = [753307464946024588,687581733603770368]
 
+
+# checkTime() allows for twice a day automatic clock outs
 async def checkTime():
     print("Watching the clock to automatically check staff out at midnight and noon.")
     # function runs every 5 minutes
     threading.Timer(300, checkTime).start()
     now = datetime.datetime.now()
-    guild=client.get_guild(regiment[0])
+    guild=client.get_guild(discords[0])
     now = datetime.datetime.now()
     current_time = now.strftime("%H:%M")
     currentday = datetime.datetime.now().strftime('%d')
@@ -40,6 +45,8 @@ async def checkTime():
     currentyear = datetime.datetime.now().strftime('%Y')
     currenthour = datetime.datetime.now().strftime('%H')
     currentmin = datetime.datetime.now().strftime('%M') 
+    
+    # Enter your chosen times here in UTC (HH:MM)
     if current_time == '12:00' or current_time == '00:00':
         print("Clocking all users out.")
         c.execute(f"update hours set outday = {currentday}")
@@ -58,6 +65,8 @@ async def checkTime():
         for item in usersintable:
             use = client.get_user(item)
             usersintable2.append(use)
+            
+            # Your On Duty Role ID goes here
         ondutyrole = discord.utils.get(guild.roles,id=979210570433716224)
         for moderator in ondutyrole.members:
             if moderator.id in usersintable:
@@ -126,14 +135,16 @@ async def checkTime():
                 c.execute(f"update hours set totaltime = {totalTime} where staffid = {moderator.id}")
                 conn.commit()
                 await moderator.remove_roles(ondutyrole)
-                await moderator.send(f"You have been clocked out in Regiment. Please clock back in if you are still active.")
+                await moderator.send(f"You have been clocked out in {guild.name}. Please clock back in if you are still active.")
 
 @client.event
 async def on_ready():
     print("Tracking Staff Hours...")
-    guild = client.get_guild(regiment[0])
+    guild = client.get_guild(discords[0])
     await checkTime()
+    # Place your On Duty Role ID here again
     ondutyrole = discord.utils.get(guild.roles,id=979210570433716224)
+    # Place the ID of your clock in channel here
     purgeChan = client.get_channel(979131454179143791)
     await purgeChan.purge(limit=2)
     
@@ -251,13 +262,18 @@ async def on_ready():
     clockView.add_item(outButton)
 
     tableEmbed = discord.Embed(title="Clock In/Out", description="Clock in/out for community hours", color=discord.Color.red())
+    
+    #Choose your clock in Rules and place a warning if you choose to do so.
     tableEmbed.add_field(name="Rules", value="Do not clock in and be inactive. You will be automatically clocked out if you forget to clock out on your own. Hours will be periodically verified.")
-    tableEmbed.add_field(name="~WARNING~", value="Abuse of this system will result in loss of position within Regiment.")
+    tableEmbed.add_field(name="~WARNING~", value=f"Abuse of this system will result in loss of position within {guild.name}.")
     await purgeChan.send(embed=tableEmbed, view=clockView)
 
-@client.slash_command(guild_ids=regiment, name="setuptable", description="Sets up staff time table.")
+    
+# This command sets clock.sqlite up for usage
+@client.slash_command(guild_ids=discords, name="setuptable", description="Sets up staff time table.")
 async def setuptable(ctx):
-    guild = client.get_guild(regiment[0])
+    guild = client.get_guild(discords[0])
+    # Modify your role set ups here for clock.sqlite, These roles are the roles that contain your staff members.
     modrole = discord.utils.get(guild.roles, id=roleids[0])
     staffrole = discord.utils.get(guild.roles, id=roleids[1])
 
@@ -268,6 +284,7 @@ async def setuptable(ctx):
             sql = "insert into hours (staffid, name) values (?, ?)"
             val = (member.id, member.name)
             c.execute(sql, val)
+            c.execute(f"update hours set totaltime = 0")
             conn.commit()
         else:
             return
@@ -279,13 +296,14 @@ async def setuptable(ctx):
             sql = "insert into hours (staffid, name) values (?, ?)"
             val = (member.id, member.name)
             c.execute(sql, val)
+            c.execute(f"update hours set totaltime = 0")
             conn.commit()
         else:
             return
 
     await ctx.interaction.response.send_message("Table has been set up.", ephemeral=True)
 
-@client.slash_command(guild_ids=regiment, name="staffcheck", description="Query the time database for clocked hours.")
+@client.slash_command(guild_ids=discords, name="staffcheck", description="Query the time database for clocked hours.")
 async def staffcheck(ctx, member: discord.User):
 
     c.execute(f"select totaltime from hours where staffid = {member.id}")
