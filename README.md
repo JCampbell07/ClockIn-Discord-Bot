@@ -1,6 +1,7 @@
 # ClockIn-Discord-Bot
 Python discord bot utilizing the Pycord discord API wrapper to create a SQL based clock in/out bot for discord staff.
 
+THIS BOT IS MADE TO RUN ON LINUX
 
 Insure you have installed the latest version of Py-Cord - https://pypi.org/project/py-cord/2.0.0rc1
 
